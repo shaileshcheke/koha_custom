@@ -252,21 +252,7 @@ $newdata{'city'}    = $input->param('city')    if defined($input->param('city'))
 $newdata{'zipcode'} = $input->param('zipcode') if defined($input->param('zipcode'));
 $newdata{'country'} = $input->param('country') if defined($input->param('country'));
 
-#added by shailesh cheke
 
-my ($blob_image,$buff);
-#open imageOpen,$input->param('photo');
-#while(read imageOpen,$buff,1024)
- #       {
-#
- #           $blob_image .= $buff;
-  #      }
-#$newdata{'image'}=$blob_image;
-$newdata{'image'}=$input->param('photo');
-close(imageOpen); 
-#end of photo handling    
-#$newdata{'image'}= $input->param('photo') if defined($input->param('photo'));
-#builds default userid
 if ( (defined $newdata{'userid'}) && ($newdata{'userid'} eq '')){
     if ( ( defined $newdata{'firstname'} ) && ( defined $newdata{'surname'} ) ) {
         # Full page edit, firstname and surname input zones are present
@@ -353,8 +339,26 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
 	$debug and warn "$op dates: " . join "\t", map {"$_: $newdata{$_}"} qw(dateofbirth dateenrolled dateexpiry);
 	if ($op eq 'insert'){
 		# we know it's not a duplicate borrowernumber or there would already be an error
-        $borrowernumber = &AddMember(%newdata);
+        $borrowernumber = &AddMember(%newdata);#sactual insertion done now going for image insertion.
+        # added by shailesh cheke for patron image insertion at the time of patron creation.
+        my $imagepath=$input->param("photo");  
+        my $uploadfile= $input->upload('uploadfile');
+        if($uploadfile)
+        {
+            my $dirname = File::Temp::tempdir( CLEANUP => 1);
+        }
+        my $filesuffix;
+        if ( $uploadfilename =~ m/(\..+)$/i ) {
+            $filesuffix = $1;
+        }
+        my ($tempfile, $tfh );
+        ( $tfh, $tempfile ) = File::Temp::tempfile( SUFFIX => $filesuffix, UNLINK => 1 );
+        while ( <$uploadfile> ) {
+        print $tfh $_;
+        }
+        close $tfh;
         $newdata{'borrowernumber'} = $borrowernumber;
+
 
         # If 'AutoEmailOpacUser' syspref is on, email user their account details from the 'notice' that matches the user's branchcode.
         if ( C4::Context->preference("AutoEmailOpacUser") == 1 && $newdata{'userid'}  && $newdata{'password'}) {
